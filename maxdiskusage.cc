@@ -5,8 +5,9 @@
 #include <mysql/plugin_audit.h>
 #include <mysql/service_my_plugin_log.h>
 #include <mysql/service_security_context.h>
+#include "mysqld.h"
 
-static uint64_t maxdiskusage_minfree_value;
+static uint64_t maxdiskusage_minfree_mb;
 
 static MYSQL_PLUGIN plugin= NULL;
 
@@ -39,7 +40,7 @@ maxdiskusage_notify(MYSQL_THD thd,
   {
     const struct mysql_event_table_access *table_access=
       (const struct mysql_event_table_access *)event;
-    uint64_t freespace;
+    uint64_t freespace_mb;
 
     /* Always allow DELETE */
     if (strncasecmp(table_access->query.str, "DELETE", 6) == 0)
@@ -50,16 +51,18 @@ maxdiskusage_notify(MYSQL_THD thd,
       return FALSE;
 
     /* TODO: replace / with @@datadir */
-    if (statvfs("/", &vfs) != 0)
+    if (statvfs(mysql_real_data_home, &vfs) != 0)
       return TRUE;
 
-    freespace = (vfs.f_bsize * vfs.f_bfree);
+    freespace_mb = (vfs.f_bsize * vfs.f_bavail) / 1024 / 1024;
 
-    if (freespace <= maxdiskusage_minfree_value)
+    if (freespace_mb < maxdiskusage_minfree_mb)
     {
       my_plugin_log_message(&plugin, MY_ERROR_LEVEL,
-                            "BLOCKING QUERY: Free filesystem space is less than %lu: %s",
-                            maxdiskusage_minfree_value,
+                            "BLOCKING QUERY: Free filesystem space on %s (%lu MB) is less than %lu MB: %s",
+                            mysql_real_data_home,
+                            freespace_mb,
+                            maxdiskusage_minfree_mb,
                             table_access->query.str);
       return TRUE;
     }
@@ -94,7 +97,7 @@ static struct st_mysql_audit maxdiskusage_descriptor=
 
 static MYSQL_SYSVAR_ULONG(
   minfree,                                                     /* name       */
-  maxdiskusage_minfree_value,                                  /* value      */
+  maxdiskusage_minfree_mb,                                     /* value      */
   PLUGIN_VAR_OPCMDARG,                                         /* flags      */
   "Minimum free disk space",                                   /* comment    */
   NULL,                                                        /* check()    */

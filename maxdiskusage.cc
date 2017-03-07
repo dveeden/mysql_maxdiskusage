@@ -1,13 +1,12 @@
 #include <stdio.h>
-#include <string.h>
 #include <sys/statvfs.h>
 #include <mysql/plugin.h>
 #include <mysql/plugin_audit.h>
 #include <mysql/service_my_plugin_log.h>
 #include <mysql/service_security_context.h>
-#include "mysqld.h"
 
 static uint64_t maxdiskusage_minfree_mb;
+static char *maxdiskusage_monitor_fs= NULL;
 
 static MYSQL_PLUGIN plugin= NULL;
 
@@ -43,15 +42,15 @@ maxdiskusage_notify(MYSQL_THD thd,
     uint64_t freespace_mb;
 
     /* Always allow DELETE */
-    if (strncasecmp(table_access->query.str, "DELETE", 6) == 0)
+    if (table_access->sql_command_id == SQLCOM_DELETE)
       return FALSE;
 
     /* Always allow SELECT */
-    if (strncasecmp(table_access->query.str, "SELECT", 6) == 0)
+    if (table_access->sql_command_id == SQLCOM_SELECT)
       return FALSE;
 
     /* TODO: replace / with @@datadir */
-    if (statvfs(mysql_real_data_home, &vfs) != 0)
+    if (statvfs(maxdiskusage_monitor_fs, &vfs) != 0)
       return TRUE;
 
     freespace_mb = (vfs.f_bsize * vfs.f_bavail) / 1024 / 1024;
@@ -60,7 +59,7 @@ maxdiskusage_notify(MYSQL_THD thd,
     {
       my_plugin_log_message(&plugin, MY_ERROR_LEVEL,
                             "BLOCKING QUERY: Free filesystem space on %s (%lu MB) is less than %lu MB: %s",
-                            mysql_real_data_home,
+                            maxdiskusage_monitor_fs,
                             freespace_mb,
                             maxdiskusage_minfree_mb,
                             table_access->query.str);
@@ -87,7 +86,7 @@ static struct st_mysql_audit maxdiskusage_descriptor=
     0,                                              /* global variables */
     0,                                              /* server startup */
     0,                                              /* server shutdown */
-    MYSQL_AUDIT_COMMAND_START,                      /* command */
+    0,                                              /* command */
     0,                                              /* query */
     0                                               /* stored program */
   }
@@ -108,8 +107,19 @@ static MYSQL_SYSVAR_ULONG(
   0                                                            /* blocksize  */
 );
 
+static MYSQL_SYSVAR_STR(
+  monitor_fs,                                                  /* name       */
+  maxdiskusage_monitor_fs,                                     /* value      */
+  PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_MEMALLOC,                   /* flags      */
+  "Filesystem to test for disk usage",                         /* comment    */
+  NULL,                                                        /* check()    */
+  NULL,                                                        /* update()   */
+  "/var/lib/mysql"                                             /* default    */
+);
+
 static struct st_mysql_sys_var* system_variables[] = {
   MYSQL_SYSVAR(minfree),
+  MYSQL_SYSVAR(monitor_fs),
   NULL
 };
 
@@ -132,7 +142,7 @@ mysql_declare_plugin(maxdiskusage)
   PLUGIN_LICENSE_GPL,
   maxdiskusage_init,                  /* init function (when loaded)     */
   NULL,                               /* deinit function (when unloaded) */
-  0x0001,                             /* version                         */
+  0x0002,                             /* version                         */
   NULL,                               /* status variables                */
   system_variables,                   /* system variables                */
   NULL,

@@ -41,13 +41,15 @@ maxdiskusage_notify(MYSQL_THD thd,
       (const struct mysql_event_table_access *)event;
     uint64_t freespace_mb;
 
-    /* Always allow DELETE */
-    if (table_access->sql_command_id == SQLCOM_DELETE)
-      return FALSE;
-
-    /* Always allow SELECT */
-    if (table_access->sql_command_id == SQLCOM_SELECT)
-      return FALSE;
+    /* Always allow DELETE, TRUNCATE, SELECT */
+    switch (table_access->sql_command_id) {
+      case SQLCOM_DELETE:
+      case SQLCOM_DELETE_MULTI:
+      case SQLCOM_TRUNCATE:
+      case SQLCOM_SELECT:
+        return FALSE;
+      default: ;
+    }
 
     /* TODO: replace / with @@datadir */
     if (statvfs(maxdiskusage_monitor_fs, &vfs) != 0)
@@ -142,7 +144,7 @@ mysql_declare_plugin(maxdiskusage)
   PLUGIN_LICENSE_GPL,
   maxdiskusage_init,                  /* init function (when loaded)     */
   NULL,                               /* deinit function (when unloaded) */
-  0x0002,                             /* version                         */
+  0x0003,                             /* version                         */
   NULL,                               /* status variables                */
   system_variables,                   /* system variables                */
   NULL,

@@ -4,9 +4,11 @@
 #include <mysql/plugin_audit.h>
 #include <mysql/service_my_plugin_log.h>
 #include <mysql/service_security_context.h>
+#include "sql_error.h"
 
 static uint64_t maxdiskusage_minfree_mb;
 static char *maxdiskusage_monitor_fs= NULL;
+static char *maxdiskusage_action= NULL;
 
 static MYSQL_PLUGIN plugin= NULL;
 
@@ -59,13 +61,28 @@ maxdiskusage_notify(MYSQL_THD thd,
 
     if (freespace_mb < maxdiskusage_minfree_mb)
     {
-      my_plugin_log_message(&plugin, MY_ERROR_LEVEL,
-                            "BLOCKING QUERY: Free filesystem space on %s (%lu MB) is less than %lu MB: %s",
-                            maxdiskusage_monitor_fs,
-                            freespace_mb,
-                            maxdiskusage_minfree_mb,
-                            table_access->query.str);
-      return TRUE;
+      if (strncmp(maxdiskusage_action, "WARN", 6) == 0)
+      {
+        /* 1642 == ER_SIGNAL_WARN */
+        push_warning(thd, Sql_condition::SL_WARNING, 1642,
+                     "Writing to a server with high disk usage");
+      }
+      else if (strncmp(maxdiskusage_action, "BLOCK", 6) == 0)
+      {
+        my_plugin_log_message(&plugin, MY_ERROR_LEVEL,
+                              "BLOCKING QUERY: Free filesystem space on %s (%lu MB) is less than %lu MB: %s",
+                              maxdiskusage_monitor_fs,
+                              freespace_mb,
+                              maxdiskusage_minfree_mb,
+                              table_access->query.str);
+        return TRUE;
+      }
+      else
+      {
+        my_plugin_log_message(&plugin, MY_ERROR_LEVEL,
+                              "Invalid action set: %s",
+                              maxdiskusage_action);
+      }
     }
     
   }
@@ -119,9 +136,20 @@ static MYSQL_SYSVAR_STR(
   "/var/lib/mysql"                                             /* default    */
 );
 
+static MYSQL_SYSVAR_STR(
+  action,                                                      /* name       */
+  maxdiskusage_action,                                         /* value      */
+  PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_MEMALLOC,                   /* flags      */
+  "Action to take: BLOCK or WARN",                             /* comment    */
+  NULL,                                                        /* check()    */
+  NULL,                                                        /* update()   */
+  "WARN"                                                       /* default    */
+);
+
 static struct st_mysql_sys_var* system_variables[] = {
   MYSQL_SYSVAR(minfree),
   MYSQL_SYSVAR(monitor_fs),
+  MYSQL_SYSVAR(action),
   NULL
 };
 
@@ -144,7 +172,7 @@ mysql_declare_plugin(maxdiskusage)
   PLUGIN_LICENSE_GPL,
   maxdiskusage_init,                  /* init function (when loaded)     */
   NULL,                               /* deinit function (when unloaded) */
-  0x0003,                             /* version                         */
+  0x0004,                             /* version                         */
   NULL,                               /* status variables                */
   system_variables,                   /* system variables                */
   NULL,

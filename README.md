@@ -31,6 +31,18 @@ This message is also written to the error log:
 2018-02-21T08:55:10.490978Z 12 [ERROR] Plugin maxdiskusage reported: 'BLOCKING QUERY: Free filesystem space on /home (7682 MB) is less than 10000 MB: INSERT INTO t1() VALUES()'
 ```
 
+# Settings
+
+| Setting                        | Default        | Description                                      |
+|--------------------------------|----------------|--------------------------------------------------|
+| `maxdiskusage_action`          | WARN           | WARN or BLOCK                                    |
+| `maxdiskusage_minfree`         | 0              | Act if less than x MB of free space is available |
+| `maxdiskusage_monitor_fs`      | /var/lib/mysql | Directory to monitor, usally @@datadir           |
+| `maxdiskusage_pct`             | 100            | Warn if over this percentage of usage            |
+| `maxdiskusage_warn_skip_count` | 1000           | Skip every x events, reduces warning rate        |
+
+These can be set with SET GLOBAL, but you probably want to put those in your my.cnf
+
 # Building
 
 Copy the `mysql_maxdiskusage` directory to the `plugin` directory of the MySQL source code.

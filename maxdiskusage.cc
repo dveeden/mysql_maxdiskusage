@@ -8,6 +8,8 @@
 
 static uint64_t maxdiskusage_minfree_mb;
 static uint64_t maxdiskusage_pct;
+static uint64_t maxdiskusage_warn_skip_count;
+static uint64_t warn_skipped= 0;
 static char *maxdiskusage_monitor_fs= NULL;
 static char *maxdiskusage_action= NULL;
 
@@ -25,7 +27,6 @@ static bool is_super(MYSQL_THD thd)
     !security_context_get_option(ctx, "privilege_super", &is_super) &&
     is_super);
 }
-
 
 static int
 maxdiskusage_notify(MYSQL_THD thd,
@@ -66,9 +67,17 @@ maxdiskusage_notify(MYSQL_THD thd,
     {
       if (strncmp(maxdiskusage_action, "WARN", 6) == 0)
       {
-        /* 1642 == ER_SIGNAL_WARN */
-        push_warning(thd, Sql_condition::SL_WARNING, 1642,
-                     "Writing to a server which has not a lot of free space (Percentage)");
+        if (warn_skipped >= maxdiskusage_warn_skip_count)
+        {
+          warn_skipped= 0;
+          /* 1642 == ER_SIGNAL_WARN */
+          push_warning(thd, Sql_condition::SL_WARNING, 1642,
+                       "Writing to a server which has not a lot of free space (Percentage)");
+        }
+        else
+        {
+          warn_skipped++;
+        }
       }
       else if (strncmp(maxdiskusage_action, "BLOCK", 6) == 0)
       {
@@ -91,9 +100,17 @@ maxdiskusage_notify(MYSQL_THD thd,
     {
       if (strncmp(maxdiskusage_action, "WARN", 6) == 0)
       {
-        /* 1642 == ER_SIGNAL_WARN */
-        push_warning(thd, Sql_condition::SL_WARNING, 1642,
-                     "Writing to a server which has not a lot of free space (Free Bytes)");
+        if (warn_skipped >= maxdiskusage_warn_skip_count)
+        {
+          warn_skipped= 0;
+          /* 1642 == ER_SIGNAL_WARN */
+          push_warning(thd, Sql_condition::SL_WARNING, 1642,
+                       "Writing to a server which has not a lot of free space (Free Bytes)");
+        }
+        else
+        {
+          warn_skipped++;
+        }
       }
       else if (strncmp(maxdiskusage_action, "BLOCK", 6) == 0)
       {
@@ -142,6 +159,19 @@ static struct st_mysql_audit maxdiskusage_descriptor=
 /* plumbing */
 
 static MYSQL_SYSVAR_ULONG(
+  warn_skip_count,                                             /* name       */
+  maxdiskusage_warn_skip_count,                                /* value      */
+  PLUGIN_VAR_OPCMDARG,                                         /* flags      */
+  "Skip x events to limit warning rate",                       /* comment    */
+  NULL,                                                        /* check()    */
+  NULL,                                                        /* update()   */
+  1000,                                                        /* default    */
+  0,                                                           /* minimum    */
+  UINT64_MAX,                                                  /* maximum    */
+  0                                                            /* blocksize  */
+);
+
+static MYSQL_SYSVAR_ULONG(
   pct,                                                         /* name       */
   maxdiskusage_pct,                                            /* value      */
   PLUGIN_VAR_OPCMDARG,                                         /* flags      */
@@ -188,6 +218,7 @@ static MYSQL_SYSVAR_STR(
 );
 
 static struct st_mysql_sys_var* system_variables[] = {
+  MYSQL_SYSVAR(warn_skip_count),
   MYSQL_SYSVAR(pct),
   MYSQL_SYSVAR(minfree),
   MYSQL_SYSVAR(monitor_fs),
@@ -214,7 +245,7 @@ mysql_declare_plugin(maxdiskusage)
   PLUGIN_LICENSE_GPL,
   maxdiskusage_init,                  /* init function (when loaded)     */
   NULL,                               /* deinit function (when unloaded) */
-  0x0005,                             /* version                         */
+  0x0006,                             /* version                         */
   NULL,                               /* status variables                */
   system_variables,                   /* system variables                */
   NULL,

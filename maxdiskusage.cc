@@ -7,6 +7,7 @@
 #include "sql_error.h"
 
 static uint64_t maxdiskusage_minfree_mb;
+static uint64_t maxdiskusage_pct;
 static char *maxdiskusage_monitor_fs= NULL;
 static char *maxdiskusage_action= NULL;
 
@@ -42,6 +43,7 @@ maxdiskusage_notify(MYSQL_THD thd,
     const struct mysql_event_table_access *table_access=
       (const struct mysql_event_table_access *)event;
     uint64_t freespace_mb;
+    uint64_t used_pct;
 
     /* Always allow DELETE, TRUNCATE, SELECT */
     switch (table_access->sql_command_id) {
@@ -58,14 +60,40 @@ maxdiskusage_notify(MYSQL_THD thd,
       return TRUE;
 
     freespace_mb = (vfs.f_bsize * vfs.f_bavail) / 1024 / 1024;
+    used_pct = (uint64_t) (100 - (100 * ((double)vfs.f_bavail/(double)vfs.f_blocks)));
 
-    if (freespace_mb < maxdiskusage_minfree_mb)
+    if ((maxdiskusage_pct < 100) && (used_pct >= maxdiskusage_pct))
     {
       if (strncmp(maxdiskusage_action, "WARN", 6) == 0)
       {
         /* 1642 == ER_SIGNAL_WARN */
         push_warning(thd, Sql_condition::SL_WARNING, 1642,
-                     "Writing to a server with high disk usage");
+                     "Writing to a server which has not a lot of free space (Percentage)");
+      }
+      else if (strncmp(maxdiskusage_action, "BLOCK", 6) == 0)
+      {
+        my_plugin_log_message(&plugin, MY_ERROR_LEVEL,
+                              "BLOCKING QUERY: Using %lu%%, which is more that %lu%%: %s",
+                              used_pct,
+                              maxdiskusage_pct,
+                              table_access->query.str);
+        return TRUE;
+      }
+      else
+      {
+        my_plugin_log_message(&plugin, MY_ERROR_LEVEL,
+                              "Invalid action set: %s",
+                              maxdiskusage_action);
+      }
+    }
+
+    if ((maxdiskusage_minfree_mb > 0) && (freespace_mb < maxdiskusage_minfree_mb))
+    {
+      if (strncmp(maxdiskusage_action, "WARN", 6) == 0)
+      {
+        /* 1642 == ER_SIGNAL_WARN */
+        push_warning(thd, Sql_condition::SL_WARNING, 1642,
+                     "Writing to a server which has not a lot of free space (Free Bytes)");
       }
       else if (strncmp(maxdiskusage_action, "BLOCK", 6) == 0)
       {
@@ -114,6 +142,19 @@ static struct st_mysql_audit maxdiskusage_descriptor=
 /* plumbing */
 
 static MYSQL_SYSVAR_ULONG(
+  pct,                                                         /* name       */
+  maxdiskusage_pct,                                            /* value      */
+  PLUGIN_VAR_OPCMDARG,                                         /* flags      */
+  "Maximum percentage in use",                                 /* comment    */
+  NULL,                                                        /* check()    */
+  NULL,                                                        /* update()   */
+  100,                                                         /* default    */
+  0,                                                           /* minimum    */
+  100,                                                         /* maximum    */
+  0                                                            /* blocksize  */
+);
+
+static MYSQL_SYSVAR_ULONG(
   minfree,                                                     /* name       */
   maxdiskusage_minfree_mb,                                     /* value      */
   PLUGIN_VAR_OPCMDARG,                                         /* flags      */
@@ -147,6 +188,7 @@ static MYSQL_SYSVAR_STR(
 );
 
 static struct st_mysql_sys_var* system_variables[] = {
+  MYSQL_SYSVAR(pct),
   MYSQL_SYSVAR(minfree),
   MYSQL_SYSVAR(monitor_fs),
   MYSQL_SYSVAR(action),
@@ -172,7 +214,7 @@ mysql_declare_plugin(maxdiskusage)
   PLUGIN_LICENSE_GPL,
   maxdiskusage_init,                  /* init function (when loaded)     */
   NULL,                               /* deinit function (when unloaded) */
-  0x0004,                             /* version                         */
+  0x0005,                             /* version                         */
   NULL,                               /* status variables                */
   system_variables,                   /* system variables                */
   NULL,

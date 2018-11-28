@@ -4,7 +4,14 @@
 #include <mysql/plugin_audit.h>
 #include <mysql/service_my_plugin_log.h>
 #include <mysql/service_security_context.h>
+
+#if MYSQL_VERSION_ID >= 80000
+#define FALSE (0)
+#define TRUE  (1)
+#include "sql/sql_error.h"
+#else
 #include "sql_error.h"
+#endif
 
 static uint64_t maxdiskusage_minfree_mb;
 static uint64_t maxdiskusage_pct;
@@ -217,7 +224,11 @@ static MYSQL_SYSVAR_STR(
   "WARN"                                                       /* default    */
 );
 
+#if MYSQL_VERSION_ID >= 80000
+SYS_VAR *system_variables[] = {
+#else
 static struct st_mysql_sys_var* system_variables[] = {
+#endif
   MYSQL_SYSVAR(warn_skip_count),
   MYSQL_SYSVAR(pct),
   MYSQL_SYSVAR(minfree),
@@ -244,6 +255,9 @@ mysql_declare_plugin(maxdiskusage)
   "Better handle high diskusage",     /* description                     */
   PLUGIN_LICENSE_GPL,
   maxdiskusage_init,                  /* init function (when loaded)     */
+#if MYSQL_VERSION_ID >= 80000
+  NULL,
+#endif
   NULL,                               /* deinit function (when unloaded) */
   0x0006,                             /* version                         */
   NULL,                               /* status variables                */

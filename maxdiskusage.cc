@@ -6,8 +6,12 @@
 #include <mysql/service_security_context.h>
 
 #if MYSQL_VERSION_ID >= 80000
+#ifndef FALSE
 #define FALSE (0)
+#endif
+#ifndef TRUE
 #define TRUE  (1)
+#endif
 #include "sql/sql_error.h"
 #else
 #include "sql_error.h"

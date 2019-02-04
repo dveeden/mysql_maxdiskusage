@@ -16,6 +16,7 @@
 #else
 #include "sql_error.h"
 #endif
+#define MAX_WARN_MSG 1024
 
 static uint64_t maxdiskusage_minfree_mb;
 static uint64_t maxdiskusage_pct;
@@ -23,6 +24,7 @@ static uint64_t maxdiskusage_warn_skip_count;
 static uint64_t warn_skipped= 0;
 static char *maxdiskusage_monitor_fs= NULL;
 static char *maxdiskusage_action= NULL;
+static char *maxdiskusage_note= NULL;
 
 static MYSQL_PLUGIN plugin= NULL;
 
@@ -45,6 +47,7 @@ maxdiskusage_notify(MYSQL_THD thd,
                       const void *event)
 {
   struct statvfs vfs;
+  char msg[MAX_WARN_MSG];
 
   /* Always allow super */
   if (is_super(thd))
@@ -81,9 +84,9 @@ maxdiskusage_notify(MYSQL_THD thd,
         if (warn_skipped >= maxdiskusage_warn_skip_count)
         {
           warn_skipped= 0;
+          snprintf(msg, MAX_WARN_MSG, "Writing to a server which has not a lot of free space (Percentage)%s", maxdiskusage_note);
           /* 1642 == ER_SIGNAL_WARN */
-          push_warning(thd, Sql_condition::SL_WARNING, 1642,
-                       "Writing to a server which has not a lot of free space (Percentage)");
+          push_warning(thd, Sql_condition::SL_WARNING, 1642, msg);
         }
         else
         {
@@ -114,9 +117,9 @@ maxdiskusage_notify(MYSQL_THD thd,
         if (warn_skipped >= maxdiskusage_warn_skip_count)
         {
           warn_skipped= 0;
+          snprintf(msg, MAX_WARN_MSG, "Writing to a server which has not a lot of free space (Free Bytes)%s", maxdiskusage_note);
           /* 1642 == ER_SIGNAL_WARN */
-          push_warning(thd, Sql_condition::SL_WARNING, 1642,
-                       "Writing to a server which has not a lot of free space (Free Bytes)");
+          push_warning(thd, Sql_condition::SL_WARNING, 1642, msg);
         }
         else
         {
@@ -228,6 +231,16 @@ static MYSQL_SYSVAR_STR(
   "WARN"                                                       /* default    */
 );
 
+static MYSQL_SYSVAR_STR(
+  note,                                                        /* name       */
+  maxdiskusage_note,                                           /* value      */
+  PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_MEMALLOC,                   /* flags      */
+  "Note to add to the warning message",                        /* comment    */
+  NULL,                                                        /* check()    */
+  NULL,                                                        /* update()   */
+  ""                                                           /* default    */
+);
+
 #if MYSQL_VERSION_ID >= 80000
 SYS_VAR *system_variables[] = {
 #else
@@ -238,6 +251,7 @@ static struct st_mysql_sys_var* system_variables[] = {
   MYSQL_SYSVAR(minfree),
   MYSQL_SYSVAR(monitor_fs),
   MYSQL_SYSVAR(action),
+  MYSQL_SYSVAR(note),
   NULL
 };
 

@@ -46,6 +46,9 @@ These can be set with SET GLOBAL, but you probably want to put those in your my.
 
 # Building
 
+This is tested against MySQL 5.7 and MySQL 8.0. Pull requests for other MySQL and MariaDB
+versions are welcome.
+
 Copy the `mysql_maxdiskusage` directory to the `plugin` directory of the MySQL source code.
 Build the code as usual or just run `make maxdiskusag`.
 Either use the resulting build or copy `maxdiskusage.so` to the `plugin_dir`.

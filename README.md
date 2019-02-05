@@ -36,6 +36,7 @@ This message is also written to the error log:
 | Setting                        | Default        | Description                                      |
 |--------------------------------|----------------|--------------------------------------------------|
 | `maxdiskusage_action`          | WARN           | WARN or BLOCK                                    |
+| `maxdiskusage_note`            | ''             | Note to add to the warning message               |
 | `maxdiskusage_minfree`         | 0              | Act if less than x MB of free space is available |
 | `maxdiskusage_monitor_fs`      | /var/lib/mysql | Directory to monitor, usally @@datadir           |
 | `maxdiskusage_pct`             | 100            | Warn if over this percentage of usage            |

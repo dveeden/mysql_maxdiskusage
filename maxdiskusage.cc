@@ -20,6 +20,7 @@
 
 static uint64_t maxdiskusage_minfree_mb;
 static uint64_t maxdiskusage_pct;
+static uint64_t maxdiskusage_block_pct;
 static uint64_t maxdiskusage_warn_skip_count;
 static uint64_t warn_skipped= 0;
 static char *maxdiskusage_monitor_fs= NULL;
@@ -79,7 +80,7 @@ maxdiskusage_notify(MYSQL_THD thd,
 
     if ((maxdiskusage_pct < 100) && (used_pct >= maxdiskusage_pct))
     {
-      if (strncmp(maxdiskusage_action, "WARN", 6) == 0)
+      if ((strncmp(maxdiskusage_action, "WARN", 6) == 0 || (strncmp(maxdiskusage_action, "WARN_AND_BLOCK", 6) == 0 && used_pct < maxdiskusage_block_pct))
       {
         if (warn_skipped >= maxdiskusage_warn_skip_count)
         {
@@ -93,7 +94,7 @@ maxdiskusage_notify(MYSQL_THD thd,
           warn_skipped++;
         }
       }
-      else if (strncmp(maxdiskusage_action, "BLOCK", 6) == 0)
+      else if (strncmp(maxdiskusage_action, "BLOCK", 6) == 0 || (strncmp(maxdiskusage_action, "WARN_AND_BLOCK", 6) == 0 && used_pct >= maxdiskusage_block_pct))
       {
         my_plugin_log_message(&plugin, MY_ERROR_LEVEL,
                               "BLOCKING QUERY: Using %lu%%, which is more that %lu%%: %s",

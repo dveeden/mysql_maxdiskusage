@@ -33,14 +33,15 @@ This message is also written to the error log:
 
 # Settings
 
-| Setting                        | Default        | Description                                      |
-|--------------------------------|----------------|--------------------------------------------------|
-| `maxdiskusage_action`          | WARN           | WARN or BLOCK                                    |
-| `maxdiskusage_note`            | ''             | Note to add to the warning message               |
-| `maxdiskusage_minfree`         | 0              | Act if less than x MB of free space is available |
-| `maxdiskusage_monitor_fs`      | /var/lib/mysql | Directory to monitor, usally @@datadir           |
-| `maxdiskusage_pct`             | 100            | Warn if over this percentage of usage            |
-| `maxdiskusage_warn_skip_count` | 1000           | Skip every x events, reduces warning rate        |
+| Setting                        | Default        | Description                                                        |
+|--------------------------------|----------------|--------------------------------------------------------------------|
+| `maxdiskusage_action`          | WARN           | WARN or BLOCK or WARN_AND_BLOCK                                    |
+| `maxdiskusage_note`            | ''             | Note to add to the warning message                                 |
+| `maxdiskusage_minfree`         | 0              | Act if less than x MB of free space is available                   |
+| `maxdiskusage_monitor_fs`      | /var/lib/mysql | Directory to monitor, usally @@datadir                             |
+| `maxdiskusage_pct`             | 100            | Execute the action if over this percentage of usage                |
+| `maxdiskusage_block_pct`       | 100            | Block if over this percentage of usage if action is WARN_AND_BLOCK |
+| `maxdiskusage_warn_skip_count` | 1000           | Skip every x events, reduces warning rate                          |
 
 These can be set with SET GLOBAL, but you probably want to put those in your my.cnf
 

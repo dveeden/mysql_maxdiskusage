@@ -78,7 +78,7 @@ maxdiskusage_notify(MYSQL_THD thd,
     freespace_mb = (vfs.f_bsize * vfs.f_bavail) / 1024 / 1024;
     used_pct = (uint64_t) (100 - (100 * ((double)vfs.f_bavail/(double)vfs.f_blocks)));
 
-    if ((maxdiskusage_pct < 100) && (used_pct >= maxdiskusage_pct))
+    if ((maxdiskusage_pct < 100) && ((used_pct >= maxdiskusage_pct) || used_pct > maxdiskusage_block_pct))
     {
       if ((strncmp(maxdiskusage_action, "WARN", 10) == 0 || (strncmp(maxdiskusage_action, "WARN_AND_BLOCK", 10) == 0 && used_pct < maxdiskusage_block_pct))
       {

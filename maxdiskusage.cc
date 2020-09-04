@@ -80,7 +80,7 @@ maxdiskusage_notify(MYSQL_THD thd,
 
     if ((maxdiskusage_pct < 100) && (used_pct >= maxdiskusage_pct))
     {
-      if ((strncmp(maxdiskusage_action, "WARN", 6) == 0 || (strncmp(maxdiskusage_action, "WARN_AND_BLOCK", 6) == 0 && used_pct < maxdiskusage_block_pct))
+      if ((strncmp(maxdiskusage_action, "WARN", 10) == 0 || (strncmp(maxdiskusage_action, "WARN_AND_BLOCK", 10) == 0 && used_pct < maxdiskusage_block_pct))
       {
         if (warn_skipped >= maxdiskusage_warn_skip_count)
         {

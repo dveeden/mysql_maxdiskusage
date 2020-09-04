@@ -94,7 +94,7 @@ maxdiskusage_notify(MYSQL_THD thd,
           warn_skipped++;
         }
       }
-      else if (strncmp(maxdiskusage_action, "BLOCK", 6) == 0 || (strncmp(maxdiskusage_action, "WARN_AND_BLOCK", 6) == 0 && used_pct >= maxdiskusage_block_pct))
+      else if (strncmp(maxdiskusage_action, "BLOCK", 10) == 0 || (strncmp(maxdiskusage_action, "WARN_AND_BLOCK", 10) == 0 && used_pct >= maxdiskusage_block_pct))
       {
         my_plugin_log_message(&plugin, MY_ERROR_LEVEL,
                               "BLOCKING QUERY: Using %lu%%, which is more that %lu%%: %s",

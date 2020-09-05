@@ -58,6 +58,12 @@ https://dev.mysql.com/doc/refman/5.7/en/compiling-plugin-libraries.html
 
 Might contain some code from https://github.com/gkodinov/audit_tripwire
 
+# Contributing
+
+Please open issues and send pull requests on GitHub.
+
+Please format your code with `clang-format`.
+
 # Related links
 
 * http://databaseblog.myname.nl/2017/03/improving-mysql-out-of-disk-space.html

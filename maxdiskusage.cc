@@ -186,6 +186,18 @@ static MYSQL_SYSVAR_ULONG(pct,                         /* name       */
                           0                            /* blocksize  */
 );
 
+static MYSQL_SYSVAR_ULONG(block_pct,                   /* name       */
+                          maxdiskusage_block_pct,      /* value      */
+                          PLUGIN_VAR_OPCMDARG,         /* flags      */
+                          "Maximum percentage for blocking", /* comment    */
+                          NULL,                        /* check()    */
+                          NULL,                        /* update()   */
+                          100,                         /* default    */
+                          0,                           /* minimum    */
+                          100,                         /* maximum    */
+                          0                            /* blocksize  */
+);
+
 static MYSQL_SYSVAR_ULONG(minfree,                   /* name       */
                           maxdiskusage_minfree_mb,   /* value      */
                           PLUGIN_VAR_OPCMDARG,       /* flags      */
@@ -232,6 +244,7 @@ static struct st_mysql_sys_var *system_variables[] = {
 #endif
     MYSQL_SYSVAR(warn_skip_count),
     MYSQL_SYSVAR(pct),
+    MYSQL_SYSVAR(block_pct),
     MYSQL_SYSVAR(minfree),
     MYSQL_SYSVAR(monitor_fs),
     MYSQL_SYSVAR(action),

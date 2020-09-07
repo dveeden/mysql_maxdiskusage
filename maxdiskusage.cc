@@ -72,10 +72,11 @@ static int maxdiskusage_notify(MYSQL_THD thd, mysql_event_class_t event_class,
     used_pct =
         (uint64_t)(100 - (100 * ((double)vfs.f_bavail / (double)vfs.f_blocks)));
 
-    if ((maxdiskusage_pct < 100) &&
-        ((used_pct >= maxdiskusage_pct) || used_pct >= maxdiskusage_block_pct)) {
-      if (strncmp(maxdiskusage_action, "WARN", 10) == 0 || (strncmp(maxdiskusage_action, "WARN_AND_BLOCK", 10) == 0 && used_pct < maxdiskusage_block_pct))
-      {
+    if ((maxdiskusage_pct < 100) && ((used_pct >= maxdiskusage_pct) ||
+                                     used_pct >= maxdiskusage_block_pct)) {
+      if (strncmp(maxdiskusage_action, "WARN", 10) == 0 ||
+          (strncmp(maxdiskusage_action, "WARN_AND_BLOCK", 10) == 0 &&
+           used_pct < maxdiskusage_block_pct)) {
         if (warn_skipped >= maxdiskusage_warn_skip_count) {
           warn_skipped = 0;
           snprintf(msg, MAX_WARN_MSG,
@@ -87,25 +88,20 @@ static int maxdiskusage_notify(MYSQL_THD thd, mysql_event_class_t event_class,
         } else {
           warn_skipped++;
         }
-      }
-      else if (strncmp(maxdiskusage_action, "BLOCK", 10) == 0)
-      {
+      } else if (strncmp(maxdiskusage_action, "BLOCK", 10) == 0) {
         my_plugin_log_message(
             &plugin, MY_ERROR_LEVEL,
             "BLOCKING QUERY: Using %lu%%, which is more that %lu%%: %s",
             used_pct, maxdiskusage_pct, table_access->query.str);
         return TRUE;
-      }
-      else if (strncmp(maxdiskusage_action, "WARN_AND_BLOCK", 10) == 0 && used_pct >= maxdiskusage_block_pct)
-      {
+      } else if (strncmp(maxdiskusage_action, "WARN_AND_BLOCK", 10) == 0 &&
+                 used_pct >= maxdiskusage_block_pct) {
         my_plugin_log_message(
             &plugin, MY_ERROR_LEVEL,
             "BLOCKING QUERY: Using %lu%%, which is more that %lu%%: %s",
             used_pct, maxdiskusage_block_pct, table_access->query.str);
         return TRUE;
-      }
-      else
-      {
+      } else {
         my_plugin_log_message(&plugin, MY_ERROR_LEVEL, "Invalid action set: %s",
                               maxdiskusage_action);
       }
@@ -186,16 +182,16 @@ static MYSQL_SYSVAR_ULONG(pct,                         /* name       */
                           0                            /* blocksize  */
 );
 
-static MYSQL_SYSVAR_ULONG(block_pct,                   /* name       */
-                          maxdiskusage_block_pct,      /* value      */
-                          PLUGIN_VAR_OPCMDARG,         /* flags      */
+static MYSQL_SYSVAR_ULONG(block_pct,                         /* name       */
+                          maxdiskusage_block_pct,            /* value      */
+                          PLUGIN_VAR_OPCMDARG,               /* flags      */
                           "Maximum percentage for blocking", /* comment    */
-                          NULL,                        /* check()    */
-                          NULL,                        /* update()   */
-                          100,                         /* default    */
-                          0,                           /* minimum    */
-                          100,                         /* maximum    */
-                          0                            /* blocksize  */
+                          NULL,                              /* check()    */
+                          NULL,                              /* update()   */
+                          100,                               /* default    */
+                          0,                                 /* minimum    */
+                          100,                               /* maximum    */
+                          0                                  /* blocksize  */
 );
 
 static MYSQL_SYSVAR_ULONG(minfree,                   /* name       */

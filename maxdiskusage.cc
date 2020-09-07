@@ -265,7 +265,7 @@ mysql_declare_plugin(maxdiskusage) {
       NULL,
 #endif
       NULL,             /* deinit function (when unloaded) */
-      0x0009,           /* version                         */
+      0x0100,           /* version                         */
       NULL,             /* status variables                */
       system_variables, /* system variables                */
       NULL, 0,

@@ -254,20 +254,21 @@ static int maxdiskusage_init(MYSQL_PLUGIN p) {
 
 /** Plugin declaration */
 
-mysql_declare_plugin(maxdiskusage) {
-  MYSQL_AUDIT_PLUGIN,                 /* type                            */
-      &maxdiskusage_descriptor,       /* descriptor                      */
-      "maxdiskusage",                 /* name                            */
-      "Daniël van Eeden",             /* author                          */
-      "Better handle high diskusage", /* description                     */
-      PLUGIN_LICENSE_GPL, maxdiskusage_init, /* init function (when loaded) */
+mysql_declare_plugin(maxdiskusage){
+    MYSQL_AUDIT_PLUGIN,             /* type                            */
+    &maxdiskusage_descriptor,       /* descriptor                      */
+    "maxdiskusage",                 /* name                            */
+    "Daniël van Eeden",             /* author                          */
+    "Better handle high diskusage", /* description                     */
+    PLUGIN_LICENSE_GPL,             /* license                         */
+    maxdiskusage_init,              /* init function (when loaded)     */
 #if MYSQL_VERSION_ID >= 80000
-      NULL,
+    NULL,
 #endif
-      NULL,             /* deinit function (when unloaded) */
-      0x0100,           /* version                         */
-      NULL,             /* status variables                */
-      system_variables, /* system variables                */
-      NULL, 0,
-}
-mysql_declare_plugin_end;
+    NULL,             /* deinit function (when unloaded) */
+    0x0100,           /* version                         */
+    NULL,             /* status variables                */
+    system_variables, /* system variables                */
+    NULL,
+    0,
+} mysql_declare_plugin_end;

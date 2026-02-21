@@ -51,7 +51,7 @@ This is tested against MySQL 5.7 and MySQL 8.0. Pull requests for other MySQL an
 versions are welcome.
 
 Copy the `mysql_maxdiskusage` directory to the `plugin` directory of the MySQL source code.
-Build the code as usual or just run `make maxdiskusag`.
+Build the code as usual or just run `make maxdiskusage`.
 Either use the resulting build or copy `maxdiskusage.so` to the `plugin_dir`.
 
 https://dev.mysql.com/doc/refman/5.7/en/compiling-plugin-libraries.html

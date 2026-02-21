@@ -5,7 +5,7 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  test-build:
     name: Tests Build
     strategy:
       matrix:
@@ -14,7 +14,6 @@ jobs:
           - "8.0"
           - "8.4"
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout mysql ${{ matrix.mysql }}
         uses: actions/checkout@v6
@@ -44,3 +43,19 @@ jobs:
         with:
           name: mysql-${{ matrix.mysql }}-maxdiskusage.so
           path: mysql/build/plugin_output_directory/maxdiskusage.so
+
+  test-format:
+    name: Tests Formatting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout maxdiskusage
+        uses: actions/checkout@v6
+      - name: Setup Environment
+        run: |
+          sudo apt update
+          sudo apt install -y clang-format git
+      - name: Check format
+        run: |
+          clang-format -i maxdiskusage.cc
+          git diff -- maxdiskusage.cc
+          [[ $(git diff -- maxdiskusage.cc | wc -l) -eq 0 ]]

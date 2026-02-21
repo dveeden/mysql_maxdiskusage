@@ -1,0 +1,46 @@
+name: test
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Tests Build
+    strategy:
+      matrix:
+        mysql:
+          - "5.7"
+          - "8.0"
+          - "8.4"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout mysql ${{ matrix.mysql }}
+        uses: actions/checkout@v6
+        with:
+          repository: mysql/mysql-server
+          ref: ${{ matrix.mysql }}
+          path: mysql
+      - name: Checkout maxdiskusage
+        uses: actions/checkout@v6
+        with:
+          path: mysql/plugin/maxdiskusage
+      - name: Setup Environment
+        run: |
+          sudo apt update
+          sudo apt install -y cmake gcc make libtirpc-dev
+      - name: Configure
+        run: |
+          mkdir -p mysql/build
+          cd mysql/build
+          cmake .. -DDOWNLOAD_BOOST=1 -DWITH_BOOST=${{ github.workspace }}/.deps/boost
+      - name: Build
+        run: |
+          cd mysql/build
+          make -j2 maxdiskusage
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mysql-${{ matrix.mysql }}-maxdiskusage.so
+          path: mysql/build/plugin_output_directory/maxdiskusage.so
